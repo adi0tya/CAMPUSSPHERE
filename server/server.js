@@ -19,7 +19,10 @@ const timetableRoutes = require('./routes/timetableRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 
 // Connect to MongoDB
-connectDB();
+connectDB().catch(err => {
+  console.error('❌ MongoDB connection failed:', err.message);
+  process.exit(1);
+});
 
 const app = express();
 
@@ -61,9 +64,11 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🎓 CampusSphere ERP server running on port ${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 CORS enabled for: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+  console.log(`✅ Server is ready to accept connections`);
 });
 
 // Socket.io setup
