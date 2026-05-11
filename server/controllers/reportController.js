@@ -1,72 +1,131 @@
-const Shipment = require('../models/Shipment');
 const User = require('../models/User');
-const Warehouse = require('../models/Warehouse');
+const Student = require('../models/Student');
+const Faculty = require('../models/Faculty');
+const Course = require('../models/Course');
+const Notice = require('../models/Notice');
+const Fee = require('../models/Fee');
+const Attendance = require('../models/Attendance');
 
-exports.getShipmentReport = async (req, res, next) => {
-  try {
-    const { startDate, endDate, status } = req.query;
-    const filter = {};
-    if (startDate && endDate) filter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
-    if (status) filter.status = status;
-
-    const shipments = await Shipment.find(filter)
-      .populate('assignedEmployee', 'name')
-      .populate('assignedWarehouse', 'name city')
-      .sort({ createdAt: -1 });
-
-    const summary = {
-      total: shipments.length,
-      delivered: shipments.filter(s => s.status === 'delivered').length,
-      failed: shipments.filter(s => s.status === 'failed').length,
-      pending: shipments.filter(s => s.status === 'pending').length,
-      inTransit: shipments.filter(s => s.status === 'in_transit').length
-    };
-
-    res.status(200).json({ success: true, shipments, summary });
-  } catch (error) { next(error); }
-};
-
-exports.getEmployeePerformance = async (req, res, next) => {
-  try {
-    const employees = await User.find({ role: 'employee' });
-    const performance = await Promise.all(employees.map(async (emp) => {
-      const total = await Shipment.countDocuments({ assignedEmployee: emp._id });
-      const delivered = await Shipment.countDocuments({ assignedEmployee: emp._id, status: 'delivered' });
-      const failed = await Shipment.countDocuments({ assignedEmployee: emp._id, status: 'failed' });
-      return {
-        _id: emp._id, name: emp.name, email: emp.email, employeeType: emp.employeeType,
-        total, delivered, failed, successRate: total > 0 ? ((delivered / total) * 100).toFixed(1) : 0
-      };
-    }));
-    res.status(200).json({ success: true, performance });
-  } catch (error) { next(error); }
-};
-
-exports.getWarehousePerformance = async (req, res, next) => {
-  try {
-    const warehouses = await Warehouse.find();
-    const performance = await Promise.all(warehouses.map(async (wh) => {
-      const total = await Shipment.countDocuments({ assignedWarehouse: wh._id });
-      const delivered = await Shipment.countDocuments({ assignedWarehouse: wh._id, status: 'delivered' });
-      const active = await Shipment.countDocuments({ assignedWarehouse: wh._id, status: { $nin: ['delivered', 'failed', 'returned'] } });
-      return { _id: wh._id, name: wh.name, city: wh.city, total, delivered, active };
-    }));
-    res.status(200).json({ success: true, performance });
-  } catch (error) { next(error); }
-};
-
+// @route GET /api/reports/overview
 exports.getOverviewStats = async (req, res, next) => {
   try {
-    const totalShipments = await Shipment.countDocuments();
-    const totalEmployees = await User.countDocuments({ role: 'employee' });
-    const totalWarehouses = await Warehouse.countDocuments();
-    const totalDrivers = await User.countDocuments({ role: 'employee', employeeType: 'driver' });
-    const deliveredCount = await Shipment.countDocuments({ status: 'delivered' });
-    const activeDeliveries = await Shipment.countDocuments({ status: { $in: ['in_transit', 'out_for_delivery'] } });
+    const [totalStudents, totalFaculty, totalCourses, totalNotices] = await Promise.all([
+      Student.countDocuments(),
+      Faculty.countDocuments(),
+      Course.countDocuments({ isActive: true }),
+      Notice.countDocuments({ isActive: true })
+    ]);
+
+    const feeStats = await Fee.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: '$amount' },
+          paidAmount: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'paid'] }, '$amount', 0] } },
+          pendingAmount: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'pending'] }, '$amount', 0] } },
+          overdueAmount: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'overdue'] }, '$amount', 0] } }
+        }
+      }
+    ]);
+
+    const attendanceStats = await Attendance.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          present: { $sum: { $cond: [{ $eq: ['$status', 'present'] }, 1, 0] } },
+          absent: { $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] } }
+        }
+      }
+    ]);
+
+    const departments = await Student.distinct('department');
 
     res.status(200).json({
       success: true,
-      stats: { totalShipments, totalEmployees, totalWarehouses, totalDrivers, deliveredCount, activeDeliveries }
+      stats: {
+        totalStudents,
+        totalFaculty,
+        totalCourses,
+        totalNotices,
+        totalDepartments: departments.length,
+        feeStats: feeStats[0] || { totalAmount: 0, paidAmount: 0, pendingAmount: 0, overdueAmount: 0 },
+        attendanceStats: attendanceStats[0] || { total: 0, present: 0, absent: 0 }
+      }
     });
+  } catch (error) { next(error); }
+};
+
+// @route GET /api/reports/attendance
+exports.getAttendanceReport = async (req, res, next) => {
+  try {
+    const report = await Attendance.aggregate([
+      {
+        $group: {
+          _id: '$semester',
+          total: { $sum: 1 },
+          present: { $sum: { $cond: [{ $eq: ['$status', 'present'] }, 1, 0] } },
+          absent: { $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] } }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+    res.status(200).json({ success: true, report });
+  } catch (error) { next(error); }
+};
+
+// @route GET /api/reports/fees
+exports.getFeeReport = async (req, res, next) => {
+  try {
+    const summary = await Fee.aggregate([
+      {
+        $group: {
+          _id: '$paymentStatus',
+          count: { $sum: 1 },
+          amount: { $sum: '$amount' }
+        }
+      }
+    ]);
+
+    const monthly = await Fee.aggregate([
+      { $match: { paymentStatus: 'paid' } },
+      {
+        $group: {
+          _id: { month: { $month: '$paidDate' }, year: { $year: '$paidDate' } },
+          amount: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+      { $limit: 12 }
+    ]);
+
+    res.status(200).json({ success: true, summary, monthly });
+  } catch (error) { next(error); }
+};
+
+// @route GET /api/reports/students
+exports.getStudentReport = async (req, res, next) => {
+  try {
+    const byDepartment = await Student.aggregate([
+      { $group: { _id: '$department', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+    const bySemester = await Student.aggregate([
+      { $group: { _id: '$semester', count: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]);
+    res.status(200).json({ success: true, byDepartment, bySemester });
+  } catch (error) { next(error); }
+};
+
+// @route GET /api/reports/faculty
+exports.getFacultyReport = async (req, res, next) => {
+  try {
+    const byDepartment = await Faculty.aggregate([
+      { $group: { _id: '$department', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+    res.status(200).json({ success: true, byDepartment });
   } catch (error) { next(error); }
 };

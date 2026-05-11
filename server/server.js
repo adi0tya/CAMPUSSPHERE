@@ -1,39 +1,27 @@
 require('dotenv').config();
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorMiddleware');
-const socketHandler = require('./socket/socketHandler');
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
-const shipmentRoutes = require('./routes/shipmentRoutes');
-const warehouseRoutes = require('./routes/warehouseRoutes');
-const employeeRoutes = require('./routes/employeeRoutes');
+const studentRoutes = require('./routes/studentRoutes');
+const facultyRoutes = require('./routes/facultyRoutes');
+const courseRoutes = require('./routes/courseRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes');
+const noticeRoutes = require('./routes/noticeRoutes');
+const feeRoutes = require('./routes/feeRoutes');
+const assignmentRoutes = require('./routes/assignmentRoutes');
+const timetableRoutes = require('./routes/timetableRoutes');
 const reportRoutes = require('./routes/reportRoutes');
-const seedRoutes = require('./routes/seedRoutes');
 
 // Connect to MongoDB
 connectDB();
 
 const app = express();
-const server = http.createServer(app);
-
-// Socket.io
-const io = new Server(server, {
-  cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
-  }
-});
-
-socketHandler(io);
-app.set('io', io);
 
 // Middleware
 app.use(cors({
@@ -48,15 +36,19 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/shipments', shipmentRoutes);
-app.use('/api/warehouses', warehouseRoutes);
-app.use('/api/employees', employeeRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/faculty', facultyRoutes);
+app.use('/api', courseRoutes);          // /api/courses and /api/subjects
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/notices', noticeRoutes);
+app.use('/api/fees', feeRoutes);
+app.use('/api/assignments', assignmentRoutes);
+app.use('/api/timetable', timetableRoutes);
 app.use('/api/reports', reportRoutes);
-app.use('/api/seed', seedRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'TrackSphere API is running' });
+  res.status(200).json({ status: 'OK', message: 'CampusSphere ERP API is running' });
 });
 
 // Error handler
@@ -69,7 +61,26 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 TrackSphere server running on port ${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log(`🎓 CampusSphere ERP server running on port ${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
+
+// Socket.io setup
+const io = require('socket.io')(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    credentials: true
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+  
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+// Make io accessible to routes
+app.set('io', io);

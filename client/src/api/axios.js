@@ -7,16 +7,12 @@ const API = axios.create({
   headers: { 'Content-Type': 'application/json' }
 });
 
-// Request interceptor
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 }, (error) => Promise.reject(error));
 
-// Response interceptor
 API.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -24,10 +20,9 @@ API.interceptors.response.use(
       if (error.response.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        if (window.location.pathname !== '/select-role' &&
-            window.location.pathname !== '/admin/login' &&
-            window.location.pathname !== '/employee/login' &&
-            window.location.pathname !== '/') {
+        const publicPaths = ['/select-role', '/login', '/'];
+        const isPublic = publicPaths.some(p => window.location.pathname.startsWith(p));
+        if (!isPublic) {
           toast.error('Session expired. Please login again.');
           window.location.href = '/select-role';
         }
