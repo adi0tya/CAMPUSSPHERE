@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
-import { HiShieldCheck, HiAcademicCap, HiUserGroup, HiCalculator, HiEnvelope, HiLockClosed, HiEye, HiEyeSlash, HiUser, HiPhone, HiKey } from 'react-icons/hi2';
+import { HiShieldCheck, HiAcademicCap, HiUserGroup, HiCalculator, HiEnvelope, HiLockClosed, HiEye, HiEyeSlash, HiUser, HiPhone } from 'react-icons/hi2';
 import { useAuth } from '../../context/AuthContext';
 import { getDashboardPath } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const roleConfig = {
-  admin: { label: 'Admin', icon: HiShieldCheck, gradient: 'gradient-cyan', accent: 'bg-cyan-500', focusColor: 'focus:border-cyan-500', needsSecret: true },
-  faculty: { label: 'Faculty', icon: HiAcademicCap, gradient: 'gradient-primary', accent: 'bg-indigo-500', focusColor: 'focus:border-indigo-500', needsSecret: false },
-  student: { label: 'Student', icon: HiUserGroup, gradient: 'gradient-success', accent: 'bg-emerald-500', focusColor: 'focus:border-emerald-500', needsSecret: false },
-  accountant: { label: 'Accountant', icon: HiCalculator, gradient: 'gradient-warning', accent: 'bg-amber-500', focusColor: 'focus:border-amber-500', needsSecret: true }
+  admin: { label: 'Admin', icon: HiShieldCheck, gradient: 'gradient-cyan', accent: 'bg-cyan-500', focusColor: 'focus:border-cyan-500' },
+  faculty: { label: 'Faculty', icon: HiAcademicCap, gradient: 'gradient-primary', accent: 'bg-indigo-500', focusColor: 'focus:border-indigo-500' },
+  student: { label: 'Student', icon: HiUserGroup, gradient: 'gradient-success', accent: 'bg-emerald-500', focusColor: 'focus:border-emerald-500' },
+  accountant: { label: 'Accountant', icon: HiCalculator, gradient: 'gradient-warning', accent: 'bg-amber-500', focusColor: 'focus:border-amber-500' }
 };
 
 const LoginPage = () => {
@@ -22,7 +22,7 @@ const LoginPage = () => {
   const { login, register } = useAuth();
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
-  const [regForm, setRegForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '', secretCode: '' });
+  const [regForm, setRegForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
 
   if (!config) {
     navigate('/select-role');
@@ -47,7 +47,6 @@ const LoginPage = () => {
     if (!regForm.name || !regForm.email || !regForm.phone || !regForm.password || !regForm.confirmPassword) return toast.error('Fill all fields');
     if (regForm.password !== regForm.confirmPassword) return toast.error('Passwords do not match');
     if (regForm.password.length < 6) return toast.error('Password must be at least 6 characters');
-    if (config.needsSecret && !regForm.secretCode) return toast.error('Secret code is required');
     setLoading(true);
     try {
       await register({ ...regForm, role });
@@ -127,13 +126,6 @@ const LoginPage = () => {
                 <div className="relative"><HiLockClosed className={iconClass} /><input type="password" value={regForm.confirmPassword} onChange={e => setRegForm({ ...regForm, confirmPassword: e.target.value })} placeholder="Re-enter" className={ic} /></div>
               </div>
             </div>
-            {config.needsSecret && (
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1.5">Secret Code</label>
-                <div className="relative"><HiKey className={iconClass} /><input type="password" value={regForm.secretCode} onChange={e => setRegForm({ ...regForm, secretCode: e.target.value })} placeholder="Enter secret code" className={ic} /></div>
-                <p className="text-xs text-gray-600 mt-1">Contact system administrator for the code</p>
-              </div>
-            )}
             <button type="submit" disabled={loading} className={`w-full py-3 ${config.gradient} rounded-xl text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2`}>
               {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : `Create ${config.label} Account`}
             </button>

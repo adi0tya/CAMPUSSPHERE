@@ -5,7 +5,7 @@ const generateToken = require('../utils/generateToken');
 // @route POST /api/auth/register
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, phone, password, confirmPassword, role, secretCode } = req.body;
+    const { name, email, phone, password, confirmPassword, role } = req.body;
 
     // Validate required fields
     if (!name || !email || !phone || !password || !confirmPassword || !role) {
@@ -25,23 +25,6 @@ exports.register = async (req, res, next) => {
     // Validate role
     if (!['admin', 'faculty', 'student', 'accountant'].includes(role)) {
       return res.status(400).json({ success: false, message: 'Invalid role' });
-    }
-
-    // Admin and accountant require secret code
-    if (['admin', 'accountant'].includes(role)) {
-      if (!secretCode) {
-        return res.status(403).json({ success: false, message: 'Secret code is required for this role' });
-      }
-      
-      // Check if ADMIN_SECRET_CODE is configured
-      if (!process.env.ADMIN_SECRET_CODE) {
-        console.error('ADMIN_SECRET_CODE not configured in environment variables');
-        return res.status(500).json({ success: false, message: 'Server configuration error. Contact administrator.' });
-      }
-
-      if (secretCode !== process.env.ADMIN_SECRET_CODE) {
-        return res.status(403).json({ success: false, message: 'Invalid secret code' });
-      }
     }
 
     // Check if email already exists
