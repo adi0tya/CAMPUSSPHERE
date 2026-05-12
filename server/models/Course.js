@@ -10,7 +10,6 @@ const courseSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
-courseSchema.index({ code: 1 });
 courseSchema.index({ department: 1 });
 
 module.exports = mongoose.model('Course', courseSchema);
