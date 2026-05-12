@@ -34,7 +34,7 @@ import FacultyDashboard from './pages/faculty/FacultyDashboard';
 import MySubjects from './pages/faculty/MySubjects';
 import MarkAttendance from './pages/faculty/MarkAttendance';
 import AssignmentManagement from './pages/faculty/AssignmentManagement';
-import MyTimetable from './pages/faculty/MyTimetable';
+import FacultyTimetable from './pages/faculty/MyTimetable';
 
 // Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -45,6 +45,9 @@ import StudentTimetable from './pages/student/MyTimetable';
 
 // Accountant Pages
 import AccountantDashboard from './pages/accountant/AccountantDashboard';
+import FeeManagement from './pages/accountant/FeeManagement';
+import PaymentRecords from './pages/accountant/PaymentRecords';
+import AccountantFeeReports from './pages/accountant/AccountantFeeReports';
 
 // Shared Pages
 import NoticesPage from './pages/shared/NoticesPage';
@@ -84,7 +87,7 @@ function App() {
         <Route path="subjects" element={<MySubjects />} />
         <Route path="attendance" element={<MarkAttendance />} />
         <Route path="assignments" element={<AssignmentManagement />} />
-        <Route path="timetable" element={<MyTimetable />} />
+        <Route path="timetable" element={<FacultyTimetable />} />
         <Route path="notices" element={<NoticesPage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
@@ -105,6 +108,9 @@ function App() {
       <Route path="/accountant" element={<ProtectedRoute><RoleRoute role="accountant"><AccountantLayout /></RoleRoute></ProtectedRoute>}>
         <Route index element={<Navigate to="/accountant/dashboard" replace />} />
         <Route path="dashboard" element={<AccountantDashboard />} />
+        <Route path="fees" element={<FeeManagement />} />
+        <Route path="payments" element={<PaymentRecords />} />
+        <Route path="reports" element={<AccountantFeeReports />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
 

@@ -51,7 +51,7 @@ app.use('/api/reports', reportRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'CampusSphere ERP API is running' });
+  res.status(200).json({ status: 'OK', message: 'CampusSphere ERP API is running', version: '2.0.0' });
 });
 
 // Error handler
@@ -64,28 +64,8 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🎓 CampusSphere ERP server running on port ${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 CORS enabled for: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
-  console.log(`✅ Server is ready to accept connections`);
 });
-
-// Socket.io setup
-const io = require('socket.io')(server, {
-  cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    credentials: true
-  }
-});
-
-io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
-  
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
-  });
-});
-
-// Make io accessible to routes
-app.set('io', io);
