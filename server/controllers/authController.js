@@ -35,6 +35,26 @@ exports.register = async (req, res, next) => {
 
     // Create user
     const user = await User.create({ name, email, phone, password, role });
+
+    // Auto-create profile to prevent dashboard crashes
+    if (role === 'student') {
+      const Student = require('../models/Student');
+      await Student.create({
+        user: user._id,
+        rollNumber: `STU${Date.now().toString().slice(-6)}`,
+        department: 'Unassigned',
+        semester: 1,
+        admissionYear: new Date().getFullYear(),
+      });
+    } else if (role === 'faculty') {
+      const Faculty = require('../models/Faculty');
+      await Faculty.create({
+        user: user._id,
+        employeeId: `FAC${Date.now().toString().slice(-6)}`,
+        department: 'Unassigned',
+      });
+    }
+
     const token = generateToken(user._id, user.role);
 
     res.status(201).json({
