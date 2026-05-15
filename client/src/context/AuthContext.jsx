@@ -51,6 +51,12 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  const requestOTP = async (email) => {
+    const { data } = await API.post('/api/auth/request-otp', { email });
+    toast.success(data.message);
+    return data;
+  };
+
   const register = async (formData) => {
     const { data } = await API.post('/api/auth/register', formData);
     localStorage.setItem('token', data.token);
@@ -61,16 +67,29 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  const forgotPassword = async (email) => {
+    const { data } = await API.post('/api/auth/forgot-password', { email });
+    toast.success(data.message);
+    return data;
+  };
+
+  const resetPassword = async (email, otp, newPassword) => {
+    const { data } = await API.post('/api/auth/reset-password', { email, otp, newPassword });
+    toast.success(data.message);
+    return data;
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);
     setUser(null);
+    API.post('/api/auth/logout').catch(console.error);
     toast.success('Logged out successfully');
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, fetchUser, getDashboardPath }}>
+    <AuthContext.Provider value={{ user, token, loading, login, requestOTP, register, forgotPassword, resetPassword, logout, fetchUser, getDashboardPath }}>
       {children}
     </AuthContext.Provider>
   );
