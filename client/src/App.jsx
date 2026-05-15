@@ -28,6 +28,10 @@ import FeeReports from './pages/admin/FeeReports';
 import TimetableManagement from './pages/admin/TimetableManagement';
 import Reports from './pages/admin/Reports';
 import AdminProfile from './pages/admin/AdminProfile';
+import ComplaintManagement from './pages/admin/ComplaintManagement';
+import LibraryManagement from './pages/admin/LibraryManagement';
+import RoomServiceManagement from './pages/admin/RoomServiceManagement';
+import BusManagement from './pages/admin/BusManagement';
 
 // Faculty Pages
 import FacultyDashboard from './pages/faculty/FacultyDashboard';
@@ -42,6 +46,10 @@ import MyAttendance from './pages/student/MyAttendance';
 import MyAssignments from './pages/student/MyAssignments';
 import MyFees from './pages/student/MyFees';
 import StudentTimetable from './pages/student/MyTimetable';
+import HostelComplaints from './pages/student/HostelComplaints';
+import LibrarySystem from './pages/student/LibrarySystem';
+import RoomService from './pages/student/RoomService';
+import BusTracking from './pages/student/BusTracking';
 
 // Accountant Pages
 import AccountantDashboard from './pages/accountant/AccountantDashboard';
@@ -52,6 +60,7 @@ import AccountantFeeReports from './pages/accountant/AccountantFeeReports';
 // Shared Pages
 import NoticesPage from './pages/shared/NoticesPage';
 import ProfilePage from './pages/shared/ProfilePage';
+import LostFound from './pages/shared/LostFound';
 
 function App() {
   const { loading } = useAuth();
@@ -77,6 +86,11 @@ function App() {
         <Route path="fees" element={<FeeReports />} />
         <Route path="timetable" element={<TimetableManagement />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="complaints" element={<ComplaintManagement />} />
+        <Route path="library" element={<LibraryManagement />} />
+        <Route path="room-service" element={<RoomServiceManagement />} />
+        <Route path="buses" element={<BusManagement />} />
+        <Route path="lost-found" element={<LostFound />} />
         <Route path="profile" element={<AdminProfile />} />
       </Route>
 
@@ -100,6 +114,11 @@ function App() {
         <Route path="assignments" element={<MyAssignments />} />
         <Route path="fees" element={<MyFees />} />
         <Route path="timetable" element={<StudentTimetable />} />
+        <Route path="complaints" element={<HostelComplaints />} />
+        <Route path="library" element={<LibrarySystem />} />
+        <Route path="room-service" element={<RoomService />} />
+        <Route path="bus" element={<BusTracking />} />
+        <Route path="lost-found" element={<LostFound />} />
         <Route path="notices" element={<NoticesPage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>

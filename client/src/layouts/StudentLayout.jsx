@@ -4,7 +4,8 @@ import Sidebar from '../components/common/Sidebar';
 import Navbar from '../components/common/Navbar';
 import {
   HiHome, HiClipboardDocumentList, HiDocumentText,
-  HiCurrencyRupee, HiCalendarDays, HiBell, HiUserCircle
+  HiCurrencyRupee, HiCalendarDays, HiBell, HiUserCircle,
+  HiWrenchScrewdriver, HiBookOpen, HiHomeModern, HiTruck, HiMagnifyingGlass
 } from 'react-icons/hi2';
 
 const studentLinks = [
@@ -13,6 +14,11 @@ const studentLinks = [
   { path: '/student/assignments', label: 'Assignments', icon: HiDocumentText },
   { path: '/student/fees', label: 'My Fees', icon: HiCurrencyRupee },
   { path: '/student/timetable', label: 'Timetable', icon: HiCalendarDays },
+  { path: '/student/complaints', label: 'Complaints', icon: HiWrenchScrewdriver },
+  { path: '/student/library', label: 'Library', icon: HiBookOpen },
+  { path: '/student/room-service', label: 'Room Service', icon: HiHomeModern },
+  { path: '/student/bus', label: 'Bus Tracking', icon: HiTruck },
+  { path: '/student/lost-found', label: 'Lost & Found', icon: HiMagnifyingGlass },
   { path: '/student/notices', label: 'Notices', icon: HiBell },
   { path: '/student/profile', label: 'Profile', icon: HiUserCircle },
 ];

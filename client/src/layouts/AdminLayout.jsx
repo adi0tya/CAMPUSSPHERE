@@ -4,7 +4,8 @@ import Sidebar from '../components/common/Sidebar';
 import Navbar from '../components/common/Navbar';
 import {
   HiHome, HiUsers, HiAcademicCap, HiBookOpen, HiClipboardDocumentList,
-  HiBell, HiCurrencyRupee, HiCalendarDays, HiChartBar, HiUserCircle
+  HiBell, HiCurrencyRupee, HiCalendarDays, HiChartBar, HiUserCircle,
+  HiWrenchScrewdriver, HiTruck, HiMagnifyingGlass, HiHomeModern
 } from 'react-icons/hi2';
 
 const adminLinks = [
@@ -16,6 +17,11 @@ const adminLinks = [
   { path: '/admin/notices', label: 'Notices', icon: HiBell },
   { path: '/admin/fees', label: 'Fee Reports', icon: HiCurrencyRupee },
   { path: '/admin/timetable', label: 'Timetable', icon: HiCalendarDays },
+  { path: '/admin/complaints', label: 'Complaints', icon: HiWrenchScrewdriver },
+  { path: '/admin/library', label: 'Library', icon: HiBookOpen },
+  { path: '/admin/room-service', label: 'Room Service', icon: HiHomeModern },
+  { path: '/admin/buses', label: 'Bus Management', icon: HiTruck },
+  { path: '/admin/lost-found', label: 'Lost & Found', icon: HiMagnifyingGlass },
   { path: '/admin/reports', label: 'Reports', icon: HiChartBar },
   { path: '/admin/profile', label: 'Profile', icon: HiUserCircle },
 ];
