@@ -26,6 +26,13 @@ const LoginPage = () => {
 
   const { login, register, requestOTP, forgotPassword, resetPassword } = useAuth();
 
+  if (!config) {
+    navigate('/select-role');
+    return null;
+  }
+
+  const Icon = config.icon;
+
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!loginForm.email || !loginForm.password) return toast.error('Fill all fields');
