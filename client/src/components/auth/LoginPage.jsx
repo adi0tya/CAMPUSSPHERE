@@ -24,6 +24,9 @@ const LoginPage = () => {
   const [otp, setOtp] = useState('');
   const [resetForm, setResetForm] = useState({ email: '', otp: '', newPassword: '' });
 
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [regForm, setRegForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
+
   const { login, register, requestOTP, forgotPassword, resetPassword } = useAuth();
 
   if (!config) {
