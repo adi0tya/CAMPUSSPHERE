@@ -17,7 +17,7 @@ export const usePayment = () => {
       });
 
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY || 'rzp_test_mock',
+        key: data.key || 'rzp_test_mock',
         amount: data.order.amount,
         currency: 'INR',
         name: 'CampusSphere ERP',
