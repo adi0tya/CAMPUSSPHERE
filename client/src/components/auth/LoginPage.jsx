@@ -19,15 +19,12 @@ const LoginPage = () => {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [otpStep, setOtpStep] = useState(false);
-  const [resetStep, setResetStep] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [resetForm, setResetForm] = useState({ email: '', otp: '', newPassword: '' });
+  const [resetForm, setResetForm] = useState({ email: '', newPassword: '' });
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [regForm, setRegForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
 
-  const { login, register, requestOTP, forgotPassword, resetPassword } = useAuth();
+  const { login, register, resetPassword } = useAuth();
 
   if (!config) {
     navigate('/select-role');
@@ -49,49 +46,28 @@ const LoginPage = () => {
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    if (!otpStep) {
-      if (!regForm.name || !regForm.email || !regForm.phone || !regForm.password || !regForm.confirmPassword) return toast.error('Fill all fields');
-      if (regForm.password !== regForm.confirmPassword) return toast.error('Passwords do not match');
-      if (regForm.password.length < 6) return toast.error('Password must be at least 6 characters');
-      
-      setLoading(true);
-      try {
-        await requestOTP(regForm.email);
-        setOtpStep(true);
-      } catch (err) { toast.error(err.response?.data?.message || 'Failed to send OTP'); }
-      finally { setLoading(false); }
-    } else {
-      if (!otp) return toast.error('Enter OTP');
-      setLoading(true);
-      try {
-        await register({ ...regForm, role, otp });
-        navigate(getDashboardPath(role), { replace: true });
-      } catch (err) { toast.error(err.response?.data?.message || 'Registration failed'); }
-      finally { setLoading(false); }
-    }
+    if (!regForm.name || !regForm.email || !regForm.phone || !regForm.password || !regForm.confirmPassword) return toast.error('Fill all fields');
+    if (regForm.password !== regForm.confirmPassword) return toast.error('Passwords do not match');
+    if (regForm.password.length < 6) return toast.error('Password must be at least 6 characters');
+    
+    setLoading(true);
+    try {
+      await register({ ...regForm, role });
+      navigate(getDashboardPath(role), { replace: true });
+    } catch (err) { toast.error(err.response?.data?.message || 'Registration failed'); }
+    finally { setLoading(false); }
   };
 
   const handleForgotSubmit = async (e) => {
     e.preventDefault();
-    if (!resetStep) {
-      if (!resetForm.email) return toast.error('Enter your email');
-      setLoading(true);
-      try {
-        await forgotPassword(resetForm.email);
-        setResetStep(true);
-      } catch (err) { toast.error(err.response?.data?.message || 'Failed to send OTP'); }
-      finally { setLoading(false); }
-    } else {
-      if (!resetForm.otp || !resetForm.newPassword) return toast.error('Fill all fields');
-      setLoading(true);
-      try {
-        await resetPassword(resetForm.email, resetForm.otp, resetForm.newPassword);
-        toast.success('Password reset! Please login.');
-        setTab('login');
-        setResetStep(false);
-      } catch (err) { toast.error(err.response?.data?.message || 'Failed to reset password'); }
-      finally { setLoading(false); }
-    }
+    if (!resetForm.email || !resetForm.newPassword) return toast.error('Fill all fields');
+    setLoading(true);
+    try {
+      await resetPassword(resetForm.email, resetForm.newPassword);
+      toast.success('Password reset! Please login.');
+      setTab('login');
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed to reset password'); }
+    finally { setLoading(false); }
   };
 
   const ic = `w-full pl-11 pr-4 py-3 bg-black border border-[#2a2a2a] rounded-xl text-white placeholder-gray-600 text-sm ${config.focusColor} outline-none transition-all`;
@@ -114,8 +90,8 @@ const LoginPage = () => {
         </div>
 
         <div className="flex bg-[#111111] rounded-xl p-1 mb-6 border border-[#2a2a2a]">
-          <button onClick={() => { setTab('login'); setOtpStep(false); setResetStep(false); }} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'login' ? `${config.accent} text-white` : 'text-gray-500 hover:text-white'}`}>Login</button>
-          <button onClick={() => { setTab('register'); setOtpStep(false); setResetStep(false); }} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'register' ? `${config.accent} text-white` : 'text-gray-500 hover:text-white'}`}>Register</button>
+          <button onClick={() => { setTab('login'); }} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'login' ? `${config.accent} text-white` : 'text-gray-500 hover:text-white'}`}>Login</button>
+          <button onClick={() => { setTab('register'); }} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === 'register' ? `${config.accent} text-white` : 'text-gray-500 hover:text-white'}`}>Register</button>
         </div>
 
         {tab === 'login' ? (
@@ -147,66 +123,48 @@ const LoginPage = () => {
         ) : tab === 'forgot' ? (
           <form onSubmit={handleForgotSubmit} className="glass p-8 space-y-5">
             <h2 className="text-xl font-bold text-white mb-2">Reset Password</h2>
-            {!resetStep ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Enter Registered Email</label>
-                <div className="relative"><HiEnvelope className={iconClass} /><input type="email" value={resetForm.email} onChange={e => setResetForm({ ...resetForm, email: e.target.value })} placeholder="email@example.com" className={ic} /></div>
-              </div>
-            ) : (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">6-Digit OTP</label>
-                  <input type="text" value={resetForm.otp} onChange={e => setResetForm({ ...resetForm, otp: e.target.value })} placeholder="Enter OTP from Email" className={`${ic} text-center tracking-widest text-lg`} maxLength={6} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">New Password</label>
-                  <div className="relative"><HiLockClosed className={iconClass} /><input type="password" value={resetForm.newPassword} onChange={e => setResetForm({ ...resetForm, newPassword: e.target.value })} placeholder="New Password" className={ic} /></div>
-                </div>
-              </>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Registered Email</label>
+              <div className="relative"><HiEnvelope className={iconClass} /><input type="email" value={resetForm.email} onChange={e => setResetForm({ ...resetForm, email: e.target.value })} placeholder="email@example.com" className={ic} /></div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">New Password</label>
+              <div className="relative"><HiLockClosed className={iconClass} /><input type="password" value={resetForm.newPassword} onChange={e => setResetForm({ ...resetForm, newPassword: e.target.value })} placeholder="New Password" className={ic} /></div>
+            </div>
             <button type="submit" disabled={loading} className={`w-full py-3 ${config.gradient} rounded-xl text-white font-semibold hover:opacity-90 transition-opacity flex justify-center`}>
-              {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (!resetStep ? 'Send OTP' : 'Reset Password')}
+              {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Reset Password'}
             </button>
             <button type="button" onClick={() => setTab('login')} className="w-full text-sm text-gray-500 hover:text-white mt-4">Back to Login</button>
           </form>
         ) : (
           <form onSubmit={handleRegisterSubmit} className="glass p-8 space-y-4">
-            {!otpStep ? (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1.5">Full Name</label>
-                  <div className="relative"><HiUser className={iconClass} /><input value={regForm.name} onChange={e => setRegForm({ ...regForm, name: e.target.value })} placeholder="Your full name" className={ic} /></div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1.5">Email</label>
-                  <div className="relative"><HiEnvelope className={iconClass} /><input type="email" value={regForm.email} onChange={e => setRegForm({ ...regForm, email: e.target.value })} placeholder={`${role}@example.com`} className={ic} /></div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1.5">Phone</label>
-                  <div className="relative"><HiPhone className={iconClass} /><input value={regForm.phone} onChange={e => setRegForm({ ...regForm, phone: e.target.value })} placeholder="+91-XXXXXXXXXX" className={ic} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1.5">Password</label>
-                    <div className="relative"><HiLockClosed className={iconClass} /><input type="password" value={regForm.password} onChange={e => setRegForm({ ...regForm, password: e.target.value })} placeholder="Min 6 chars" className={ic} /></div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1.5">Confirm</label>
-                    <div className="relative"><HiLockClosed className={iconClass} /><input type="password" value={regForm.confirmPassword} onChange={e => setRegForm({ ...regForm, confirmPassword: e.target.value })} placeholder="Re-enter" className={ic} /></div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-4">
-                <h3 className="text-white font-medium mb-4">Verify Your Email</h3>
-                <p className="text-sm text-gray-400 mb-6">We've sent a 6-digit code to {regForm.email}</p>
-                <input type="text" value={otp} onChange={e => setOtp(e.target.value)} placeholder="• • • • • •" className={`${ic} text-center tracking-[1em] text-xl font-bold`} maxLength={6} />
-                <button type="button" onClick={() => setOtpStep(false)} className="text-sm text-gray-500 mt-4 hover:text-white transition-colors">Wrong email? Go back.</button>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1.5">Full Name</label>
+                <div className="relative"><HiUser className={iconClass} /><input value={regForm.name} onChange={e => setRegForm({ ...regForm, name: e.target.value })} placeholder="Your full name" className={ic} /></div>
               </div>
-            )}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1.5">Email</label>
+                <div className="relative"><HiEnvelope className={iconClass} /><input type="email" value={regForm.email} onChange={e => setRegForm({ ...regForm, email: e.target.value })} placeholder={`${role}@example.com`} className={ic} /></div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1.5">Phone</label>
+                <div className="relative"><HiPhone className={iconClass} /><input value={regForm.phone} onChange={e => setRegForm({ ...regForm, phone: e.target.value })} placeholder="+91-XXXXXXXXXX" className={ic} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1.5">Password</label>
+                  <div className="relative"><HiLockClosed className={iconClass} /><input type="password" value={regForm.password} onChange={e => setRegForm({ ...regForm, password: e.target.value })} placeholder="Min 6 chars" className={ic} /></div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1.5">Confirm</label>
+                  <div className="relative"><HiLockClosed className={iconClass} /><input type="password" value={regForm.confirmPassword} onChange={e => setRegForm({ ...regForm, confirmPassword: e.target.value })} placeholder="Re-enter" className={ic} /></div>
+                </div>
+              </div>
+            </>
             
             <button type="submit" disabled={loading} className={`w-full py-3 ${config.gradient} rounded-xl text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2`}>
-              {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (!otpStep ? `Create ${config.label} Account` : 'Verify & Complete Registration')}
+              {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : `Create ${config.label} Account`}
             </button>
           </form>
         )}

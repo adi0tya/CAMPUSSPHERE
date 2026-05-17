@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { requestOTP, register, login, getMe, updateProfile, changePassword, forgotPassword, resetPassword, logout } = require('../controllers/authController');
+const { register, login, getMe, updateProfile, changePassword, resetPassword, logout } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
+const { authLimiter, OTPRequestLimiter } = require('../middleware/rateLimitMiddleware');
 
-router.post('/request-otp', requestOTP);
-router.post('/register', register);
-router.post('/login', login);
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
+router.post('/register', authLimiter, register);
+router.post('/login', authLimiter, login);
+router.post('/reset-password', authLimiter, resetPassword);
 
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);

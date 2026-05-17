@@ -1,6 +1,8 @@
 const Payment = require('../models/Payment');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
+const { invalidateCachePattern } = require('../middleware/cacheMiddleware');
+const { publishEvent } = require('../utils/eventBus');
 
 // Initialize Razorpay (Requires RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in .env)
 const getRazorpayInstance = () => {
@@ -41,6 +43,8 @@ exports.createOrder = async (req, res, next) => {
     const order = await rzp.orders.create(options);
     payment.razorpayOrderId = order.id;
     await payment.save();
+    
+    await invalidateCachePattern('api/payments');
 
     res.status(201).json({ success: true, order, payment });
   } catch (error) { next(error); }
@@ -58,6 +62,10 @@ exports.verifyPayment = async (req, res, next) => {
       payment.status = 'Completed';
       payment.razorpayPaymentId = razorpay_payment_id || `mock_pay_${Date.now()}`;
       await payment.save();
+      
+      await invalidateCachePattern('api/payments');
+      publishEvent('payments_channel', { type: 'PAYMENT_COMPLETED', data: payment });
+      
       return res.status(200).json({ success: true, payment });
     }
 
@@ -70,6 +78,10 @@ exports.verifyPayment = async (req, res, next) => {
       payment.status = 'Completed';
       payment.razorpayPaymentId = razorpay_payment_id;
       await payment.save();
+      
+      await invalidateCachePattern('api/payments');
+      publishEvent('payments_channel', { type: 'PAYMENT_COMPLETED', data: payment });
+      
       res.status(200).json({ success: true, payment });
     } else {
       payment.status = 'Failed';

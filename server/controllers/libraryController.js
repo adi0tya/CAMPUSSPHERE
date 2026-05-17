@@ -1,10 +1,12 @@
 const LibraryBook = require('../models/LibraryBook');
 const BookIssue = require('../models/BookIssue');
+const { invalidateCachePattern } = require('../middleware/cacheMiddleware');
 
 // @route POST /api/library/books
 exports.addBook = async (req, res, next) => {
   try {
     const book = await LibraryBook.create(req.body);
+    await invalidateCachePattern('api/library/books');
     res.status(201).json({ success: true, book });
   } catch (error) { next(error); }
 };
@@ -30,6 +32,8 @@ exports.requestBookIssue = async (req, res, next) => {
       user: req.user._id,
       dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 days
     });
+    
+    await invalidateCachePattern('api/library/issues');
 
     res.status(201).json({ success: true, issue });
   } catch (error) { next(error); }
@@ -68,6 +72,10 @@ exports.updateIssueStatus = async (req, res, next) => {
 
     await book.save();
     await issue.save();
+    
+    await invalidateCachePattern('api/library/books');
+    await invalidateCachePattern('api/library/issues');
+    
     res.status(200).json({ success: true, issue });
   } catch (error) { next(error); }
 };

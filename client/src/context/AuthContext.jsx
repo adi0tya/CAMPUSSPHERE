@@ -51,11 +51,7 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const requestOTP = async (email) => {
-    const { data } = await API.post('/api/auth/request-otp', { email });
-    toast.success(data.message);
-    return data;
-  };
+
 
   const register = async (formData) => {
     const { data } = await API.post('/api/auth/register', formData);
@@ -67,14 +63,10 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const forgotPassword = async (email) => {
-    const { data } = await API.post('/api/auth/forgot-password', { email });
-    toast.success(data.message);
-    return data;
-  };
 
-  const resetPassword = async (email, otp, newPassword) => {
-    const { data } = await API.post('/api/auth/reset-password', { email, otp, newPassword });
+
+  const resetPassword = async (email, newPassword) => {
+    const { data } = await API.post('/api/auth/reset-password', { email, newPassword });
     toast.success(data.message);
     return data;
   };
@@ -89,7 +81,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, requestOTP, register, forgotPassword, resetPassword, logout, fetchUser, getDashboardPath }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, resetPassword, logout, fetchUser, getDashboardPath }}>
       {children}
     </AuthContext.Provider>
   );

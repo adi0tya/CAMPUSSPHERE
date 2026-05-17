@@ -5,6 +5,10 @@ const path = require('path');
 const fs = require('fs');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorMiddleware');
+const { createAdapter } = require('@socket.io/redis-adapter');
+const { redisClient, redisSubscriber } = require('./config/redis');
+const startEmailWorker = require('./workers/emailWorker');
+const { apiLimiter } = require('./middleware/rateLimitMiddleware');
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
@@ -41,7 +45,8 @@ const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
     methods: ['GET', 'POST']
-  }
+  },
+  adapter: createAdapter(redisClient, redisSubscriber)
 });
 app.set('io', io);
 
@@ -65,6 +70,7 @@ app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
+app.use('/api', apiLimiter); // Apply rate limiter to all API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/faculty', facultyRoutes);
@@ -103,4 +109,8 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`🎓 CampusSphere ERP server running on port ${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 CORS enabled for: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+  
+  // Start Workers
+  startEmailWorker();
+  console.log('⚙️ Background workers initialized');
 });

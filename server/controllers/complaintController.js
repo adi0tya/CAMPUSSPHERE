@@ -1,4 +1,6 @@
 const Complaint = require('../models/Complaint');
+const { invalidateCachePattern } = require('../middleware/cacheMiddleware');
+const { publishEvent } = require('../utils/eventBus');
 
 // @route POST /api/complaints
 exports.createComplaint = async (req, res, next) => {
@@ -9,9 +11,17 @@ exports.createComplaint = async (req, res, next) => {
       title,
       description,
       category,
-      priority,
       images
     });
+
+    // Invalidate complaints cache
+    await invalidateCachePattern('api/complaints');
+
+    // Notify admins via Socket.io and Pub/Sub
+    const io = req.app.get('io');
+    if (io) io.emit('new_complaint', complaint);
+    publishEvent('complaints_channel', { type: 'NEW_COMPLAINT', data: complaint });
+
     res.status(201).json({ success: true, complaint });
   } catch (error) { next(error); }
 };
@@ -44,6 +54,15 @@ exports.updateComplaintStatus = async (req, res, next) => {
     if (resolution) complaint.resolution = resolution;
 
     await complaint.save();
+
+    // Invalidate complaints cache
+    await invalidateCachePattern('api/complaints');
+
+    // Notify student via Socket.io and Pub/Sub
+    const io = req.app.get('io');
+    if (io) io.emit(`complaint_updated_${complaint.user}`, complaint);
+    publishEvent('complaints_channel', { type: 'UPDATE_COMPLAINT', data: complaint });
+
     res.status(200).json({ success: true, complaint });
   } catch (error) { next(error); }
 };

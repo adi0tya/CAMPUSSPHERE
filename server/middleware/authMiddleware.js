@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { redisClient } = require('../config/redis');
 
 const protect = async (req, res, next) => {
   let token;
@@ -16,6 +17,15 @@ const protect = async (req, res, next) => {
   }
 
   try {
+    // Check if token is blacklisted in Redis
+    const isBlacklisted = await redisClient.get(`bl_${token}`);
+    if (isBlacklisted) {
+      return res.status(401).json({
+        success: false,
+        message: 'Token has been revoked. Please log in again.'
+      });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = await User.findById(decoded.id);
 
