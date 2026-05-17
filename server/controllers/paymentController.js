@@ -13,6 +13,44 @@ const getRazorpayInstance = () => {
   });
 };
 
+const updateRelatedDocument = async (payment) => {
+  try {
+    const { purpose, referenceId } = payment;
+    if (!referenceId) return;
+
+    if (purpose === 'Fee') {
+      const Fee = require('../models/Fee');
+      const timestamp = Date.now().toString(36).toUpperCase();
+      const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+      const receiptNumber = `RCP-${timestamp}-${random}`;
+
+      await Fee.findByIdAndUpdate(referenceId, {
+        paymentStatus: 'paid',
+        paidDate: new Date(),
+        receiptNumber: receiptNumber
+      });
+      await invalidateCachePattern('api/fees');
+    } else if (purpose === 'Bus Pass') {
+      const BusPass = require('../models/BusPass');
+      await BusPass.findByIdAndUpdate(referenceId, {
+        status: 'Active',
+        paymentStatus: 'Paid'
+      });
+      await invalidateCachePattern('api/bus');
+    } else if (purpose === 'Library Fine') {
+      const BookIssue = require('../models/BookIssue');
+      await BookIssue.findByIdAndUpdate(referenceId, {
+        status: 'Returned',
+        fineAmount: 0,
+        returnDate: new Date()
+      });
+      await invalidateCachePattern('api/library');
+    }
+  } catch (err) {
+    console.error('Error updating related document:', err);
+  }
+};
+
 exports.createOrder = async (req, res, next) => {
   try {
     const { amount, purpose, referenceId } = req.body;
@@ -63,6 +101,7 @@ exports.verifyPayment = async (req, res, next) => {
       payment.razorpayPaymentId = razorpay_payment_id || `mock_pay_${Date.now()}`;
       await payment.save();
       
+      await updateRelatedDocument(payment);
       await invalidateCachePattern('api/payments');
       publishEvent('payments_channel', { type: 'PAYMENT_COMPLETED', data: payment });
       
@@ -79,6 +118,7 @@ exports.verifyPayment = async (req, res, next) => {
       payment.razorpayPaymentId = razorpay_payment_id;
       await payment.save();
       
+      await updateRelatedDocument(payment);
       await invalidateCachePattern('api/payments');
       publishEvent('payments_channel', { type: 'PAYMENT_COMPLETED', data: payment });
       

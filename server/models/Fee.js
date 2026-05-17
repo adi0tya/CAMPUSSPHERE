@@ -13,7 +13,12 @@ const feeSchema = new mongoose.Schema({
   receiptNumber: { type: String, unique: true, sparse: true },
   description: { type: String, trim: true, default: 'Tuition Fee' },
   semester: { type: Number },
-  academicYear: { type: String }
+  academicYear: { type: String },
+  category: { 
+    type: String, 
+    enum: ['Hostel fees', 'Bus fees', 'Library fines', 'Semester fees', 'Exam fees', 'Custom fees'],
+    default: 'Custom fees'
+  }
 }, { timestamps: true });
 
 feeSchema.index({ student: 1 });

@@ -15,7 +15,7 @@ const adminLinks = [
   { path: '/admin/courses', label: 'Courses & Subjects', icon: HiBookOpen },
   { path: '/admin/attendance', label: 'Attendance', icon: HiClipboardDocumentList },
   { path: '/admin/notices', label: 'Notices', icon: HiBell },
-  { path: '/admin/fees', label: 'Fee Reports', icon: HiCurrencyRupee },
+  { path: '/admin/fees', label: 'Fees Management', icon: HiCurrencyRupee },
   { path: '/admin/timetable', label: 'Timetable', icon: HiCalendarDays },
   { path: '/admin/complaints', label: 'Complaints', icon: HiWrenchScrewdriver },
   { path: '/admin/library', label: 'Library', icon: HiBookOpen },

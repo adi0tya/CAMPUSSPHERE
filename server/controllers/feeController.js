@@ -11,13 +11,48 @@ const generateReceiptNumber = () => {
 // @route POST /api/fees
 exports.createFee = async (req, res, next) => {
   try {
-    const { student, amount, dueDate, description, semester, academicYear } = req.body;
+    const { student, amount, dueDate, description, semester, academicYear, category } = req.body;
     if (!student || !amount || !dueDate) {
       return res.status(400).json({ success: false, message: 'Student, amount and due date are required' });
     }
-    const fee = await Fee.create({ student, amount, dueDate, description, semester, academicYear });
+    const fee = await Fee.create({ student, amount, dueDate, description, semester, academicYear, category });
     const populated = await Fee.findById(fee._id).populate({ path: 'student', populate: { path: 'user', select: 'name email' } });
     res.status(201).json({ success: true, fee: populated });
+  } catch (error) { next(error); }
+};
+
+// @route POST /api/fees/batch
+exports.createFeeBatch = async (req, res, next) => {
+  try {
+    const { students, amount, dueDate, description, semester, academicYear, category } = req.body;
+    if (!amount || !dueDate || !category) {
+      return res.status(400).json({ success: false, message: 'Amount, category, and due date are required' });
+    }
+
+    let targetStudentIds = [];
+    if (students && Array.isArray(students) && students.length > 0) {
+      targetStudentIds = students;
+    } else {
+      const allStudents = await Student.find({}, '_id');
+      targetStudentIds = allStudents.map(s => s._id);
+    }
+
+    if (targetStudentIds.length === 0) {
+      return res.status(404).json({ success: false, message: 'No students found to assign fee' });
+    }
+
+    const feeRecords = targetStudentIds.map(studentId => ({
+      student: studentId,
+      amount,
+      dueDate,
+      description: description || `${category} Assignment`,
+      semester,
+      academicYear,
+      category
+    }));
+
+    const createdFees = await Fee.insertMany(feeRecords);
+    res.status(201).json({ success: true, count: createdFees.length });
   } catch (error) { next(error); }
 };
 
