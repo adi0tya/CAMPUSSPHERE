@@ -84,3 +84,13 @@ exports.updateLocation = async (req, res, next) => {
     res.status(200).json({ success: true, message: 'Location updated in realtime cache' });
   } catch (error) { next(error); }
 };
+
+exports.updatePassStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const pass = await BusPass.findByIdAndUpdate(id, { status }, { new: true });
+    await invalidateCachePattern('api/buses');
+    res.status(200).json({ success: true, pass });
+  } catch (error) { next(error); }
+};

@@ -6,7 +6,10 @@ const { cacheRoute } = require('../middleware/cacheMiddleware');
 
 router.use(protect);
 router.route('/books').post(addBook).get(cacheRoute(300), getBooks);
-router.route('/issues').post(requestBookIssue).get(cacheRoute(60), getIssues);
-router.put('/issues/:id/status', updateIssueStatus);
+
+router.post('/issue', requestBookIssue); // Student applies
+router.get('/my-issues', cacheRoute(60), getIssues); // Student views
+router.get('/issues', cacheRoute(60), getIssues); // Admin views
+router.put('/issue/:id/status', updateIssueStatus); // Admin updates
 
 module.exports = router;
