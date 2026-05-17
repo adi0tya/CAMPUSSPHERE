@@ -9,14 +9,19 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tool
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      const { data } = await API.get('/api/reports/overview');
-      setStats(data.stats);
+      const [resStats, resPayments] = await Promise.all([
+        API.get('/api/reports/overview'),
+        API.get('/api/payments/history')
+      ]);
+      setStats(resStats.data.stats);
+      setPayments(resPayments.data.payments || []);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -55,6 +60,10 @@ const AdminDashboard = () => {
     cutout: '65%'
   };
 
+  const completedPayments = payments.filter(p => p.status === 'Completed');
+  const totalRevenue = completedPayments.reduce((acc, curr) => acc + curr.amount, 0);
+  const pendingTransactions = payments.filter(p => p.status === 'Pending').length;
+
   return (
     <div className="space-y-6">
       <div>
@@ -69,6 +78,22 @@ const AdminDashboard = () => {
         <StatCard title="Departments" value={stats?.totalDepartments || 0} icon={HiBuildingOffice2} color="purple" />
         <StatCard title="Notices" value={stats?.totalNotices || 0} icon={HiBell} color="warning" />
         <StatCard title="Attendance %" value={`${attPct}%`} icon={HiClipboardDocumentList} color="danger" />
+      </div>
+
+      {/* Payment Revenue & Monitoring Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="glass p-5">
+          <p className="text-gray-500 text-xs font-medium mb-1">Total Gateway Revenue</p>
+          <p className="text-2xl font-bold text-cyan-400">₹{totalRevenue.toLocaleString()}</p>
+        </div>
+        <div className="glass p-5">
+          <p className="text-gray-500 text-xs font-medium mb-1">Completed Payments</p>
+          <p className="text-2xl font-bold text-emerald-400">{completedPayments.length}</p>
+        </div>
+        <div className="glass p-5">
+          <p className="text-gray-500 text-xs font-medium mb-1">Pending Checkout Sessions</p>
+          <p className="text-2xl font-bold text-amber-400">{pendingTransactions}</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -95,6 +120,45 @@ const AdminDashboard = () => {
           <h3 className="text-base font-semibold text-white mb-4">Attendance Overview</h3>
           <Doughnut data={attData} options={chartOpts} />
         </div>
+      </div>
+
+      {/* Payment Monitoring & Revenue Logs */}
+      <div className="glass p-6">
+        <h3 className="text-base font-semibold text-white mb-4">Payment Gateway Monitoring</h3>
+        {payments.length === 0 ? (
+          <p className="text-gray-600 text-center py-8">No payments initiated yet</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#2a2a2a] text-xs font-semibold text-gray-600 uppercase">
+                  <th className="px-4 py-3">Purpose</th>
+                  <th className="px-4 py-3">Transaction Reference</th>
+                  <th className="px-4 py-3">Amount</th>
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1a1a1a]">
+                {payments.slice(0, 5).map((pay) => (
+                  <tr key={pay._id} className="hover:bg-[#0a0a0a] transition-colors">
+                    <td className="px-4 py-3 text-white font-medium">{pay.purpose}</td>
+                    <td className="px-4 py-3 text-xs font-mono text-cyan-400">{pay.razorpayPaymentId || `MOCK_TXN_${pay._id.slice(-6).toUpperCase()}`}</td>
+                    <td className="px-4 py-3 text-white font-mono">₹{pay.amount.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-gray-500">{new Date(pay.createdAt).toLocaleDateString('en-IN')}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                        pay.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+                      }`}>
+                        {pay.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="glass p-6">

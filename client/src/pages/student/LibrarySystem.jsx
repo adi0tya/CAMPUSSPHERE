@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import API from '../../api/axios';
 import toast from 'react-hot-toast';
-import { HiBookOpen, HiMagnifyingGlass, HiArrowPath } from 'react-icons/hi2';
+import { HiBookOpen, HiMagnifyingGlass, HiArrowPath, HiCurrencyRupee } from 'react-icons/hi2';
 import EmptyState from '../../components/common/EmptyState';
+import { usePayment } from '../../hooks/usePayment';
 
 const LibrarySystem = () => {
   const [books, setBooks] = useState([]);
   const [issuedBooks, setIssuedBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const { initiatePayment, isProcessing } = usePayment();
 
   const fetchData = async () => {
     try {
@@ -37,6 +39,18 @@ const LibrarySystem = () => {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to request book');
     }
+  };
+
+  const handlePayFine = (issueId, title) => {
+    initiatePayment({
+      amount: 150, // Static fine amount for demonstration
+      purpose: `Library Fine: ${title}`,
+      referenceId: issueId,
+      onSuccess: () => {
+        toast.success('Fine paid successfully!');
+        fetchData();
+      }
+    });
   };
 
   const filteredBooks = books.filter(b => 
@@ -108,17 +122,32 @@ const LibrarySystem = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {issuedBooks.map(i => (
-                <div key={i._id} className="glass p-4 border-l-2 border-cyan-500">
-                  <h4 className="text-white text-sm font-medium">{i.book?.title}</h4>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-[10px] text-gray-500">Due: {new Date(i.dueDate).toLocaleDateString()}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${i.status === 'Issued' ? 'text-amber-400 bg-amber-400/10' : 'text-emerald-400 bg-emerald-400/10'}`}>
-                      {i.status}
-                    </span>
+              {issuedBooks.map(i => {
+                const isOverdue = new Date(i.dueDate) < new Date() && i.status !== 'Returned';
+                return (
+                  <div key={i._id} className="glass p-4 border-l-2 border-cyan-500">
+                    <h4 className="text-white text-sm font-medium">{i.book?.title}</h4>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-[10px] text-gray-500">Due: {new Date(i.dueDate).toLocaleDateString()}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${i.status === 'Issued' ? 'text-amber-400 bg-amber-400/10' : 'text-emerald-400 bg-emerald-400/10'}`}>
+                        {i.status}
+                      </span>
+                    </div>
+                    {isOverdue && (
+                      <div className="mt-3 pt-3 border-t border-white/5 flex justify-between items-center">
+                        <span className="text-xs text-red-400 font-medium">Fine: ₹150</span>
+                        <button 
+                          onClick={() => handlePayFine(i._id, i.book?.title)}
+                          disabled={isProcessing}
+                          className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition-colors flex items-center gap-1"
+                        >
+                          <HiCurrencyRupee /> Pay Fine
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

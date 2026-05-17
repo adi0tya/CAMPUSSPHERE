@@ -7,6 +7,7 @@ const StudentDashboard = () => {
   const [profile, setProfile] = useState(null);
   const [attendance, setAttendance] = useState({ summary: [] });
   const [fees, setFees] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -14,16 +15,18 @@ const StudentDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [p, att, f, a] = await Promise.all([
+      const [p, att, f, a, pay] = await Promise.all([
         API.get('/api/students/me'),
         API.get('/api/attendance/my'),
         API.get('/api/fees/my'),
-        API.get('/api/assignments')
+        API.get('/api/assignments'),
+        API.get('/api/payments/history')
       ]);
       setProfile(p.data.student);
       setAttendance(att.data);
       setFees(f.data.fees);
       setAssignments(a.data.assignments);
+      setPayments(pay.data.payments || []);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -88,6 +91,45 @@ const StudentDashboard = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Recent Transactions Section */}
+      <div className="glass p-6">
+        <h3 className="text-base font-semibold text-white mb-4">Recent Transactions</h3>
+        {payments.length === 0 ? (
+          <p className="text-gray-600 text-center py-8">No transaction history</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#2a2a2a] text-xs font-semibold text-gray-600 uppercase">
+                  <th className="px-4 py-3">Purpose</th>
+                  <th className="px-4 py-3">Transaction ID</th>
+                  <th className="px-4 py-3">Amount</th>
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1a1a1a]">
+                {payments.slice(0, 5).map((pay) => (
+                  <tr key={pay._id} className="hover:bg-[#0a0a0a] transition-colors">
+                    <td className="px-4 py-3 text-white font-medium">{pay.purpose}</td>
+                    <td className="px-4 py-3 text-xs font-mono text-cyan-400">{pay.razorpayPaymentId || `MOCK_TXN_${pay._id.slice(-6).toUpperCase()}`}</td>
+                    <td className="px-4 py-3 text-white">₹{pay.amount.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-gray-500">{new Date(pay.createdAt).toLocaleDateString('en-IN')}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                        pay.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+                      }`}>
+                        {pay.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

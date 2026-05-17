@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import API from '../../api/axios';
 import toast from 'react-hot-toast';
-import { HiTruck, HiMapPin, HiTicket, HiQrCode } from 'react-icons/hi2';
+import { HiTruck, HiMapPin, HiTicket, HiQrCode, HiCurrencyRupee } from 'react-icons/hi2';
 import EmptyState from '../../components/common/EmptyState';
+import { usePayment } from '../../hooks/usePayment';
 
 const BusTracking = () => {
   const [routes, setRoutes] = useState([]);
   const [busPass, setBusPass] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { initiatePayment, isProcessing } = usePayment();
 
   const fetchData = async () => {
     try {
@@ -28,14 +30,21 @@ const BusTracking = () => {
     fetchData();
   }, []);
 
-  const handleApplyPass = async (routeId) => {
-    try {
-      await API.post('/api/buses/apply-pass', { routeId });
-      toast.success('Bus pass application submitted!');
-      fetchData();
-    } catch (err) {
-      toast.error('Application failed');
-    }
+  const handleApplyPass = (routeId, routeName) => {
+    initiatePayment({
+      amount: 5000, // Fixed price for 6 months
+      purpose: `6-Month Bus Pass: ${routeName}`,
+      referenceId: routeId,
+      onSuccess: async () => {
+        try {
+          await API.post('/api/buses/apply-pass', { routeId });
+          toast.success('Bus pass activated!');
+          fetchData();
+        } catch (err) {
+          toast.error('Payment succeeded but pass generation failed. Contact admin.');
+        }
+      }
+    });
   };
 
   if (loading) return <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" /></div>;
@@ -72,8 +81,12 @@ const BusTracking = () => {
                       </div>
                     </div>
                     {!busPass && (
-                      <button onClick={() => handleApplyPass(r._id)} className="btn-primary text-xs py-2">
-                        Apply Pass
+                      <button 
+                        onClick={() => handleApplyPass(r._id, r.routeName)} 
+                        disabled={isProcessing}
+                        className="btn-primary text-xs py-2 flex items-center gap-1"
+                      >
+                        <HiCurrencyRupee /> {isProcessing ? 'Processing...' : 'Buy Pass (₹5000)'}
                       </button>
                     )}
                   </div>

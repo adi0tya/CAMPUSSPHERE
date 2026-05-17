@@ -20,7 +20,10 @@ const ROLE_DASHBOARDS = {
 export const getDashboardPath = (role) => ROLE_DASHBOARDS[role] || '/select-role';
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('user');
+    return saved && saved !== 'undefined' ? JSON.parse(saved) : null;
+  });
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
@@ -33,11 +36,15 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await API.get('/api/auth/me');
       setUser(data.user);
-    } catch {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setToken(null);
-      setUser(null);
+      localStorage.setItem('user', JSON.stringify(data.user)); // Sync any updates
+    } catch (err) {
+      // Only clear auth on actual 401 unauthorized errors, not network timeouts
+      if (err.response && err.response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setToken(null);
+        setUser(null);
+      }
     } finally { setLoading(false); }
   };
 

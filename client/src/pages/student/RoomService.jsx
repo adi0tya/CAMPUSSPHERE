@@ -1,13 +1,24 @@
 import { useState, useEffect } from 'react';
 import API from '../../api/axios';
 import toast from 'react-hot-toast';
-import { HiHomeModern, HiClock, HiCheckCircle } from 'react-icons/hi2';
+import { HiHomeModern, HiClock, HiCheckCircle, HiCurrencyRupee } from 'react-icons/hi2';
 import EmptyState from '../../components/common/EmptyState';
+import { usePayment } from '../../hooks/usePayment';
+
+const servicePrices = {
+  'Cleaning': 0,
+  'Deep Cleaning': 500,
+  'Laundry': 150,
+  'Maintenance': 0,
+  'AC Maintenance': 350,
+  'Delivery': 0
+};
 
 const RoomService = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ type: 'Cleaning', note: '', preferredTime: '' });
+  const { initiatePayment, isProcessing } = usePayment();
 
   const fetchRequests = async () => {
     try {
@@ -24,8 +35,7 @@ const RoomService = () => {
     fetchRequests();
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const submitRequest = async () => {
     try {
       await API.post('/api/room-service', formData);
       toast.success('Room service request placed!');
@@ -33,6 +43,21 @@ const RoomService = () => {
       fetchRequests();
     } catch (err) {
       toast.error('Failed to place request');
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const price = servicePrices[formData.type] || 0;
+    
+    if (price > 0) {
+      initiatePayment({
+        amount: price,
+        purpose: `Premium Room Service: ${formData.type}`,
+        onSuccess: submitRequest
+      });
+    } else {
+      submitRequest();
     }
   };
 
@@ -52,10 +77,12 @@ const RoomService = () => {
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-xs font-medium text-gray-400 mb-1">Service Type</label>
               <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="input-field">
-                <option value="Cleaning" className="bg-black">Room Cleaning</option>
-                <option value="Laundry" className="bg-black">Laundry Service</option>
-                <option value="Maintenance" className="bg-black">Maintenance</option>
-                <option value="Delivery" className="bg-black">Water/Items Delivery</option>
+                <option value="Cleaning" className="bg-black">Room Cleaning (Free)</option>
+                <option value="Deep Cleaning" className="bg-black">Deep Cleaning (₹500)</option>
+                <option value="Laundry" className="bg-black">Laundry Service (₹150)</option>
+                <option value="Maintenance" className="bg-black">General Maintenance (Free)</option>
+                <option value="AC Maintenance" className="bg-black">AC Servicing (₹350)</option>
+                <option value="Delivery" className="bg-black">Water/Items Delivery (Free)</option>
               </select>
             </div>
             <div className="col-span-2 sm:col-span-1">
@@ -67,7 +94,13 @@ const RoomService = () => {
             <label className="block text-xs font-medium text-gray-400 mb-1">Additional Notes</label>
             <textarea rows="3" value={formData.note} onChange={e => setFormData({ ...formData, note: e.target.value })} className="input-field resize-none" placeholder="Special instructions..."></textarea>
           </div>
-          <button type="submit" className="w-full btn-primary py-3">Place Request</button>
+          <button type="submit" disabled={isProcessing} className="w-full btn-primary py-3 flex items-center justify-center gap-2">
+            {servicePrices[formData.type] > 0 ? (
+              <><HiCurrencyRupee /> {isProcessing ? 'Processing...' : `Pay ₹${servicePrices[formData.type]} & Request`}</>
+            ) : (
+              'Place Request'
+            )}
+          </button>
         </form>
       </div>
 
