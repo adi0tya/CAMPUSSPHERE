@@ -1,7 +1,7 @@
 const Redis = require('ioredis');
 
 // Global config for ioredis
-const redisOptions = {
+const redisOptions = process.env.REDIS_URL ? process.env.REDIS_URL : {
   host: process.env.REDIS_HOST || '127.0.0.1',
   port: process.env.REDIS_PORT || 6379,
   password: process.env.REDIS_PASSWORD || undefined,
@@ -13,10 +13,14 @@ const redisOptions = {
 };
 
 // Main Redis Client for general caching and data
-const redisClient = new Redis(redisOptions);
+const redisClient = process.env.REDIS_URL 
+  ? new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: null })
+  : new Redis(redisOptions);
 
 // Redis Client for BullMQ (Subscriber requires a separate connection)
-const redisSubscriber = new Redis(redisOptions);
+const redisSubscriber = process.env.REDIS_URL 
+  ? new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: null })
+  : new Redis(redisOptions);
 
 redisClient.on('connect', () => {
   console.log('✅ Redis Client Connected');
